@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<meta name="referrer" content="no-referrer">
+<title>لغو عضویت گزارش هفتگی</title>
+<style>
+  body{font-family:Tahoma,Arial,sans-serif;background:#f6f8fa;color:#222b35;margin:0;
+       display:flex;min-height:100vh;align-items:center;justify-content:center;padding:16px}
+  .card{background:#fff;border:1px solid #e3e8ed;border-radius:12px;padding:28px;max-width:420px;
+        width:100%;text-align:center;line-height:1.9}
+  h1{font-size:18px;margin:0 0 8px;color:#004f68}
+  button{background:#004f68;color:#fff;border:0;border-radius:8px;padding:10px 22px;font-size:14px;cursor:pointer}
+  button:disabled{opacity:.6;cursor:wait}
+  #msg{margin-top:14px;font-size:14px}
+  a{color:#006783}
+</style>
+</head>
+<body>
+<div class="card">
+  <h1>لغو دریافت گزارش هفتگی بازار سیمان</h1>
+  <p id="info">برای لغو عضویت، دکمه‌ی زیر را بزنید. ایمیل شما از فهرست حذف می‌شود.</p>
+  <button id="btn" type="button">تأیید لغو عضویت</button>
+  <div id="msg"></div>
+</div>
+<script>
+  // --- این دو مقدار را پر کن (کلید باید Publishable/anon باشد، هرگز Secret) ---
+  const SB_URL = "https://ixehvwkmejvzsnexojns.supabase.co";
+  const SB_KEY = "PASTE_PUBLISHABLE_KEY_HERE";
+
+  const token = new URLSearchParams(location.search).get("t") || "";
+  const ok = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(token);
+  const btn = document.getElementById("btn"), msg = document.getElementById("msg");
+  const say = (t, good) => { msg.textContent = t; msg.style.color = good ? "#0ba77d" : "#ef6673"; };
+
+  if (!ok) { btn.style.display = "none"; document.getElementById("info").textContent = ""; say("لینک نامعتبر است. از لینک داخل ایمیل استفاده کنید.", false); }
+
+  // لغو فقط با کلیک انجام می‌شود (نه با باز شدن صفحه)، چون اسکنرهای ایمیل لینک‌ها را خودکار باز می‌کنند.
+  btn.addEventListener("click", async () => {
+    btn.disabled = true;
+    try {
+      const r = await fetch(SB_URL + "/rest/v1/rpc/unsubscribe", {
+        method: "POST",
+        headers: { "apikey": SB_KEY, "Content-Type": "application/json" },
+        body: JSON.stringify({ p_token: token })
+      });
+      if (!r.ok) throw new Error(r.status);
+      const removed = await r.json();
+      btn.style.display = "none";
+      document.getElementById("info").textContent = "";
+      say(removed ? "عضویت شما لغو شد و ایمیلتان حذف گردید. ممنون از همراهی‌تان 🙏"
+                  : "این لینک قبلاً استفاده شده است؛ ایمیل شما در فهرست نیست.", true);
+    } catch (e) {
+      btn.disabled = false;
+      say("ارتباط برقرار نشد. کمی بعد دوباره تلاش کنید یا به همان ایمیل پاسخ دهید تا دستی حذف کنیم.", false);
+    }
+  });
+</script>
+</body>
+</html>
